@@ -1,0 +1,228 @@
+PHASE 1 — FOUNDATION
+
+Act as a senior production full-stack engineer. Build ONLY the foundation of this assignment in the current repository.
+
+First inspect the assignment specification and `Transactions_.json`. Do not guess the dataset structure.
+
+IMPORTANT:
+- Do not build the complete application yet.
+- Do not implement the dashboard UI, transaction table, analytics UI, rewards UI, or redemption flow.
+- Do not introduce unnecessary libraries or over-engineer.
+- Preserve all source transaction records.
+- Work with the existing repository; do not create another project/repository.
+
+==================================================
+1. PROJECT STRUCTURE
+==================================================
+
+Create a clean monorepo:
+
+frontend/  → Next.js + TypeScript + Tailwind CSS
+backend/   → FastAPI + Python + SQLAlchemy + Pydantic
+data/      → dataset/seed assets where appropriate
+docs/      → engineering documentation
+
+Use a maintainable layered architecture.
+
+==================================================
+2. DATABASE
+==================================================
+
+Set up PostgreSQL + SQLAlchemy + Alembic.
+
+Create relational models for:
+
+- users
+- transactions
+- rewards
+- redemptions
+
+Transactions must use:
+- internal generated DB primary key
+- original `transaction_id` stored separately
+- NUMERIC/Decimal for money
+- TIMESTAMPTZ for normalized timestamps
+- appropriate indexes
+
+Do NOT assume source transaction IDs are unique.
+
+==================================================
+3. DATA PIPELINE
+==================================================
+
+Create a robust seed/import script for `Transactions_.json`.
+
+Inspect and normalize the actual dataset, including:
+
+- ISO timestamps
+- timezone-offset timestamps
+- date-only timestamps
+- DD/MM/YYYY timestamps
+- epoch-millisecond timestamps
+- numeric/string amounts
+- status casing
+- null/missing/empty categories → `Uncategorized`
+
+Preserve:
+- duplicate source transaction IDs
+- negative amounts
+- unusually large amounts
+- every valid source record
+
+Do not modify the original JSON.
+
+The seed must successfully insert the complete dataset into PostgreSQL.
+
+Document actual data-quality findings in:
+
+`docs/DATA_QUALITY.md`
+
+==================================================
+4. BACKEND FOUNDATION
+==================================================
+
+Create:
+
+backend/app/
+├── api/
+├── models/
+├── schemas/
+├── services/
+├── repositories/
+├── db/
+└── core/
+
+Implement:
+- configuration through environment variables
+- database/session management
+- Alembic migrations
+- `/api/health`
+- router structure for transactions, analytics and rewards
+- centralized error handling
+
+Keep business logic out of route handlers.
+
+Do not implement the complete feature APIs yet.
+
+==================================================
+5. FRONTEND FOUNDATION
+==================================================
+
+Create the Next.js App Router foundation with:
+
+- responsive application shell
+- navigation/sidebar
+- design tokens
+- typography/spacing foundation
+- Button
+- Card
+- Input
+- Select
+- Badge
+- Modal/Dialog
+- Loading state
+- Empty state
+- Error state
+
+Visual direction:
+- polished modern financial product
+- strong typography and hierarchy
+- restrained color palette
+- clean spacing
+- subtle borders
+- responsive
+- accessible
+- avoid generic admin-dashboard/template styling
+- avoid unnecessary animations/glassmorphism
+
+==================================================
+6. QUALITY + DOCUMENTATION
+==================================================
+
+Configure appropriate:
+- ESLint
+- TypeScript strictness
+- Python formatting/linting
+- pytest
+
+Add tests for:
+- health endpoint
+- timestamp normalization
+- amount normalization
+- status normalization
+- category normalization
+
+Create:
+
+README.md
+docs/DATA_QUALITY.md
+docs/DECISIONS.md
+frontend/.env.example
+backend/.env.example
+
+Document important architectural/data decisions.
+
+Do not commit secrets.
+
+==================================================
+7. REWARDS FOUNDATION
+==================================================
+
+Document this assumption in `docs/DECISIONS.md`:
+
+- 1 coin per completed ₹100
+- maximum 50 coins per successful transaction
+- FAILED/PENDING transactions earn 0
+- negative/refund-like transactions earn 0
+
+Centralize this calculation in backend business logic so it can be changed easily later.
+
+Do not build the rewards UI yet.
+
+==================================================
+8. VERIFICATION
+==================================================
+
+Before stopping, verify:
+
+- frontend starts successfully
+- backend starts successfully
+- PostgreSQL connection works
+- migrations work
+- seed succeeds
+- all source records are preserved
+- duplicate source IDs do not fail
+- timestamp normalization works
+- amount normalization works
+- tests pass
+
+Fix any issues you encounter rather than merely reporting them.
+
+==================================================
+STOP CONDITION
+==================================================
+
+STOP after completing Phase 1.
+
+Do NOT implement:
+- full dashboard
+- transaction table
+- transaction filtering UI
+- analytics UI/charts
+- transaction details UI
+- rewards catalogue UI
+- redemption UI
+- advanced animations
+
+At the end, give a concise report containing:
+
+1. What was implemented
+2. Final project structure
+3. Important data-quality findings
+4. Database/schema decisions
+5. Verification/tests performed
+6. Any remaining blockers
+
+Only report work that actually exists in the repository.
+
+Do not proceed to Phase 2.
