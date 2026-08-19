@@ -9,8 +9,8 @@ from app.core.config import settings
 
 app = FastAPI(
     title="Consumer Finance Dashboard API",
-    description="Backend API for the consumer finance dashboard — Phase 1 foundation.",
-    version="0.1.0",
+    description="Backend API for the consumer finance dashboard — Phase 2.",
+    version="0.2.0",
     docs_url="/docs",
     redoc_url="/redoc",
 )

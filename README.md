@@ -1,114 +1,164 @@
 # Consumer Finance Dashboard
 
-A full-stack personal finance dashboard — **Phase 1 Foundation**.
+Full-stack financial dashboard — FastAPI backend + Next.js frontend.
 
-## Tech Stack
+---
 
-| Layer | Technology |
-|---|---|
-| Frontend | Next.js 14 (App Router), TypeScript, Tailwind CSS |
-| Backend | FastAPI, Python 3.11+, SQLAlchemy 2 (async) |
-| Database | PostgreSQL 16 |
-| Migrations | Alembic |
-| ORM | SQLAlchemy 2 (asyncpg runtime, psycopg2 for migrations) |
+## Architecture
+
+```
+consumer-finance-dashboard/
+├── backend/      FastAPI + SQLAlchemy 2 + Alembic + PostgreSQL
+├── frontend/     Next.js 15 + TypeScript + Tailwind CSS 4
+├── data/         Raw dataset (Transactions_.json)
+└── docs/         Data quality findings, engineering decisions
+```
 
 ---
 
 ## Quick Start
 
 ### Prerequisites
+- Python 3.9+ with venv
+- PostgreSQL 16 (via `brew install postgresql@16`)
+- Node.js 20+
 
-- Docker & Docker Compose
-- Python 3.11+
-- Node.js 18+
-
-### 1. Start PostgreSQL
-
-```bash
-docker-compose up -d
-```
-
-### 2. Backend Setup
+### Backend
 
 ```bash
+# Start PostgreSQL
+brew services start postgresql@16
+
+# Create DB (first time only)
+psql postgres -c "CREATE USER finance_user WITH PASSWORD 'finance_pass';"
+psql postgres -c "CREATE DATABASE finance_db OWNER finance_user;"
+psql finance_db -c "GRANT ALL ON SCHEMA public TO finance_user;"
+
 cd backend
-
-# Create virtual environment
-python3 -m venv .venv
-source .venv/bin/activate   # Windows: .venv\Scripts\activate
-
-# Install dependencies
+python3 -m venv .venv && source .venv/bin/activate
 pip install -e ".[dev]"
 
-# Configure environment
+# Copy and edit environment
 cp .env.example .env
 
 # Run migrations
 alembic upgrade head
 
-# Seed the database (10,000 transactions)
+# Seed data (idempotent — safe to re-run)
 python scripts/seed.py
 
-# Start the API server
-uvicorn app.main:app --reload --host 0.0.0.0 --port 8000
+# Start API server
+uvicorn app.main:app --reload
 ```
 
-API docs: http://localhost:8000/docs  
-Health check: http://localhost:8000/api/health
+API available at `http://localhost:8000`  
+Swagger docs at `http://localhost:8000/docs`
 
-### 3. Frontend Setup
+### Frontend
 
 ```bash
 cd frontend
-
-# Install dependencies
 npm install
-
-# Configure environment
-cp .env.example .env.local
-
-# Start dev server
 npm run dev
 ```
 
-Frontend: http://localhost:3000
+UI available at `http://localhost:3000`
 
 ---
 
-## Project Structure
+## API Reference
 
+### Health
+
+| Method | Path | Description |
+|--------|------|-------------|
+| GET | `/api/health` | Liveness + DB connectivity check |
+
+### Transactions
+
+| Method | Path | Description |
+|--------|------|-------------|
+| GET | `/api/transactions` | Paginated, filtered, sorted list |
+| GET | `/api/transactions/{id}` | Single transaction by internal ID |
+
+**Query parameters for `GET /api/transactions`:**
+
+| Parameter | Type | Default | Description |
+|-----------|------|---------|-------------|
+| `page` | int | 1 | Page number (1-indexed) |
+| `page_size` | int | 25 | Items per page (max 200) |
+| `search` | string | — | Search merchant name or transaction ID |
+| `category` | string | — | Exact category filter |
+| `status` | enum | — | `SUCCESS`, `FAILED`, or `PENDING` |
+| `min_amount` | decimal | — | Minimum amount (inclusive) |
+| `max_amount` | decimal | — | Maximum amount (inclusive) |
+| `start_date` | datetime | — | Start date filter (ISO 8601) |
+| `end_date` | datetime | — | End date filter (ISO 8601) |
+| `sort_by` | enum | `timestamp` | `timestamp`, `amount`, `merchant`, `category`, `status` |
+| `sort_order` | enum | `desc` | `asc` or `desc` |
+
+**Response shape:**
+```json
+{
+  "items": [...],
+  "page": 1,
+  "page_size": 25,
+  "total": 10000,
+  "total_pages": 400
+}
 ```
-consumer-finance-dashboard/
-├── backend/
-│   ├── alembic/              # Database migrations
-│   │   └── versions/         # Migration files
-│   ├── app/
-│   │   ├── api/routes/       # FastAPI route handlers
-│   │   ├── core/             # Configuration (env vars)
-│   │   ├── db/               # Engine, session, base
-│   │   ├── models/           # SQLAlchemy ORM models
-│   │   ├── repositories/     # Data access layer (Phase 2)
-│   │   ├── schemas/          # Pydantic schemas (Phase 2)
-│   │   └── services/         # Business logic
-│   │       ├── normalizer.py # Data normalization pipeline
-│   │       └── rewards.py    # Coin calculation rules
-│   ├── scripts/
-│   │   └── seed.py           # JSON → PostgreSQL import
-│   └── tests/
-├── data/
-│   └── Transactions_.json    # Original dataset (read-only)
-├── docs/
-│   ├── DATA_QUALITY.md       # Dataset quality findings
-│   └── DECISIONS.md          # Architectural decisions
-├── frontend/
-│   ├── app/                  # Next.js App Router
-│   ├── components/
-│   │   ├── layout/           # Sidebar, TopNav
-│   │   └── ui/               # Design system primitives
-│   └── lib/
-│       └── api.ts            # API client
-└── docker-compose.yml
+
+**Errors:**
+- `422` — invalid parameter value or inverted range
+- `404` — transaction not found
+
+### Analytics
+
+| Method | Path | Description |
+|--------|------|-------------|
+| GET | `/api/analytics/category` | Spending grouped by category |
+| GET | `/api/analytics/monthly` | Spending grouped by month |
+
+> **Spending semantics:** Only `SUCCESS` transactions with positive amounts are counted. `FAILED`, `PENDING`, and negative amounts (refunds) are excluded.
+
+**Category response:**
+```json
+{
+  "items": [
+    { "category": "Groceries", "total_amount": "1002558.84", "transaction_count": 838 }
+  ],
+  "total_categories": 11
+}
 ```
+
+**Monthly response:**
+```json
+{
+  "items": [
+    { "year": 2025, "month": 7, "month_label": "Jul 2025", "total_amount": "4672083.99", "transaction_count": 723 }
+  ]
+}
+```
+
+### Rewards
+
+| Method | Path | Description |
+|--------|------|-------------|
+| GET | `/api/rewards` | Active reward catalogue |
+| GET | `/api/rewards/balance` | Current coin balance |
+| POST | `/api/rewards/{reward_id}/redeem` | Redeem a catalogue item |
+
+**Reward rules:**
+- 1 coin per ₹100 of a `SUCCESS` transaction (floor division)
+- Maximum 50 coins per transaction
+- `FAILED` / `PENDING` → 0 coins
+- Negative amounts → 0 coins
+
+**Redemption:**
+- Atomic: `SELECT FOR UPDATE` prevents race conditions / double-spend
+- Returns `400` if balance is insufficient
+- Returns `404` if reward ID not found or inactive
+- Returns `422` if request body is invalid
 
 ---
 
@@ -116,14 +166,14 @@ consumer-finance-dashboard/
 
 ```bash
 cd backend
-source .venv/bin/activate
 pytest tests/ -v
 ```
+
+All 100 tests must pass (45 Phase 1 + 55 Phase 2).
 
 ---
 
 ## Documentation
 
-- [Data Quality Findings](docs/DATA_QUALITY.md)
-- [Architectural Decisions](docs/DECISIONS.md)
-- [API Docs](http://localhost:8000/docs) (server must be running)
+- [`docs/DATA_QUALITY.md`](docs/DATA_QUALITY.md) — data anomalies found in the dataset
+- [`docs/DECISIONS.md`](docs/DECISIONS.md) — engineering and schema decisions

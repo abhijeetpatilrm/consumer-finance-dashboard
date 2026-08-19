@@ -10,12 +10,15 @@ from app.db.base import Base
 
 
 class Redemption(Base):
-    """Tracks when a user redeems accumulated coins."""
+    """Tracks when a user redeems accumulated coins against a catalogue item."""
 
     __tablename__ = "redemptions"
 
     id: Mapped[int] = mapped_column(primary_key=True, autoincrement=True)
     user_id: Mapped[int] = mapped_column(ForeignKey("users.id"), nullable=False, index=True)
+    catalogue_item_id: Mapped[Optional[int]] = mapped_column(
+        ForeignKey("reward_catalogue.id"), nullable=True, index=True
+    )
     coins_used: Mapped[int] = mapped_column(Integer, nullable=False)
     description: Mapped[Optional[str]] = mapped_column(String(512), nullable=True)
     redeemed_at: Mapped[datetime] = mapped_column(
@@ -24,8 +27,12 @@ class Redemption(Base):
 
     # Relationships
     user: Mapped["User"] = relationship(back_populates="redemptions")
+    catalogue_item: Mapped[Optional["RewardCatalogue"]] = relationship(
+        back_populates="redemptions"
+    )
 
     def __repr__(self) -> str:
         return (
             f"<Redemption id={self.id} user_id={self.user_id} coins_used={self.coins_used}>"
         )
+
