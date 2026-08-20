@@ -1,5 +1,5 @@
 import type { Metadata } from "next";
-import { Inter } from "next/font/google";
+import { Inter, Playfair_Display } from "next/font/google";
 import "./globals.css";
 import { Sidebar } from "@/components/layout/Sidebar";
 import { TopNav } from "@/components/layout/TopNav";
@@ -10,26 +10,29 @@ const inter = Inter({
   display: "swap",
 });
 
+const playfair = Playfair_Display({
+  subsets: ["latin"],
+  variable: "--font-playfair",
+  display: "swap",
+});
+
 export const metadata: Metadata = {
-  title: "FinLens — Consumer Finance Dashboard",
-  description:
-    "Track your transactions, analyse spending patterns, and manage rewards in one place.",
-  keywords: ["finance", "dashboard", "transactions", "rewards", "analytics"],
+  title: "Firma — Next Gen Finance",
+  description: "Track your transactions, analyse spending patterns, and manage rewards in one place.",
 };
 
-export default function RootLayout({
-  children,
-}: {
-  children: React.ReactNode;
-}) {
+export default function RootLayout({ children }: { children: React.ReactNode }) {
   return (
-    <html lang="en" className={inter.variable}>
-      <body className="bg-slate-950 text-slate-100 antialiased">
-        <div className="flex h-screen overflow-hidden">
+    <html lang="en" className={`${inter.variable} ${playfair.variable}`}>
+      <body className="bg-white text-[#181D27] antialiased">
+        <div className="flex h-dvh overflow-hidden bg-white">
           <Sidebar />
-          <div className="flex flex-1 flex-col overflow-hidden">
+          <div className="flex flex-1 flex-col overflow-hidden min-w-0 bg-white">
             <TopNav />
-            <main className="flex-1 overflow-y-auto px-6 py-8">
+            <main
+              id="main-content"
+              className="flex-1 overflow-y-auto px-6 py-8 sm:px-10 sm:py-10 bg-[#FAFAFB]"
+            >
               {children}
             </main>
           </div>
