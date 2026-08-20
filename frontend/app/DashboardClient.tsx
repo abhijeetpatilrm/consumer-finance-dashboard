@@ -83,10 +83,15 @@ export default function DashboardClient() {
 
   useEffect(() => {
     let c = false;
-    Promise.all([api.analytics.category(), api.analytics.monthly(), api.rewards.balance()])
-      .then(([cat, mo, bal]) => {
-        if (!c) { setCategoryData(cat); setMonthlyData(mo); setBalance(bal); setAnalyticsLoading(false); }
-      }).catch(() => { if (!c) setAnalyticsLoading(false); });
+    Promise.allSettled([api.analytics.category(), api.analytics.monthly(), api.rewards.balance()])
+      .then(([catRes, moRes, balRes]) => {
+        if (!c) {
+          if (catRes.status === "fulfilled") setCategoryData(catRes.value);
+          if (moRes.status === "fulfilled") setMonthlyData(moRes.value);
+          if (balRes.status === "fulfilled") setBalance(balRes.value);
+          setAnalyticsLoading(false);
+        }
+      });
     return () => { c = true; };
   }, []);
 
